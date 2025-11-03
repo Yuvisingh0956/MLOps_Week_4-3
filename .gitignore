@@ -6,3 +6,4 @@ dvc.lock
 .dvc/cache/
 *.db
 dvc-sa-key.json
+gha-deployer-key.json

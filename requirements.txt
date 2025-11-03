@@ -8,3 +8,5 @@ google-cloud-storage
 dvc
 dvc-gs
 pytest
+flask
+gunicorn
