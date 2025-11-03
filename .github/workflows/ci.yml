@@ -40,14 +40,15 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS="${PWD}/dvc-sa-key.json"
           dvc remote modify gcs-remote credentialpath dvc-sa-key.json || true
           pip install google-cloud-storage
-          echo "import os, subprocess, sys
+          cat <<EOF > check_gs_access.py
+import os, subprocess, sys
 print('Checking GS access')
 res = subprocess.run(['gsutil', 'ls', 'gs://' + os.environ['BUCKET_NAME']], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 print(res.stdout.decode())
 if res.returncode != 0:
     print('WARNING: gsutil failed', res.stderr.decode())
     sys.exit(res.returncode)
-" > check_gs_access.py
+EOF
           python check_gs_access.py
 
       - name: Checkout DVC files
