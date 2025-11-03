@@ -37,7 +37,7 @@ jobs:
           gcloud config set project "$GCP_PROJECT_ID"
           gsutil ls gs://$BUCKETNAME
       - name: Pull DVC data
-        run: dvc pull
+        run: dvc pull --force
       - name: Run tests & generate report
         run: pytest --md report.md
       - name: Create CML report (PRs only)
