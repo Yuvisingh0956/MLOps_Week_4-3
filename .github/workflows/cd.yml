@@ -64,8 +64,9 @@ jobs:
         env:
           GCPKEY: ${{ secrets.GCPKEY }}
         run: |
-          echo "$GCPKEY" > /home/runner/work/_temp/dvc-sa-key.json
+          printf "%s" "$GCPKEY" > /home/runner/work/_temp/dvc-sa-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="/home/runner/work/_temp/dvc-sa-key.json"
+          head -n 20 /home/runner/work/_temp/dvc-sa-key.json    # For debug, remove after!
           dvc pull --force
 
 
