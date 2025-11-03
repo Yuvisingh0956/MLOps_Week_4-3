@@ -62,7 +62,7 @@ jobs:
 
       - name: DVC pull (get model)
         env:
-          GCPKEY: ${{ secrets.GCP_SA_KEY }}
+          GCPKEY: ${{ secrets.GCPKEY }}
         run: |
           echo "$GCPKEY" > /home/runner/work/_temp/dvc-sa-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="/home/runner/work/_temp/dvc-sa-key.json"
