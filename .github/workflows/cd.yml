@@ -62,11 +62,10 @@ jobs:
 
       - name: DVC pull (get model)
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
+          GCPKEY_B64: ${{ secrets.GCPKEY_BASE64_CD }}
         run: |
-          # write key to a temp file for dvc
-          echo "${{ secrets.GCP_SA_KEY }}" > "${{ runner.temp }}/gcp-key.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="${{ runner.temp }}/gcp-key.json"
+          echo "$GCPKEY_B64" | base64 --decode > /home/runner/work/_temp/dvc-sa-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS="/home/runner/work/_temp/dvc-sa-key.json"
           dvc pull --force
           
       - name: Build and push Docker image to Artifact Registry
