@@ -6,3 +6,5 @@ pandas
 pytest-md
 google-cloud-storage
 dvc
+dvc-gs
+pytest

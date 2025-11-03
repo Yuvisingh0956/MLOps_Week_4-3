@@ -10,7 +10,7 @@ os.makedirs("models", exist_ok=True)
 os.makedirs("metrics", exist_ok=True)
 
 # Define paths
-DATA_PATH = 'data/iris.csv'
+DATA_PATH = 'data/data.csv'
 MODEL_PATH = 'models/model.pkl'
 METRICS_PATH = 'metrics/metrics.json'
 
