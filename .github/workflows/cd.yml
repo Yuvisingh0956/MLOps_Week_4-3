@@ -62,8 +62,8 @@ jobs:
 
       - name: DVC pull (get model)
         run: |
-          echo "${{ secrets.GCP_SA_KEY }}" > "${{ runner.temp }}/gcp-key.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="${{ runner.temp }}/gcp-key.json"
+          echo "${{ secrets.GCP_SA_KEY }}" > "${{ runner.temp }}/dvc-sa-key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ runner.temp }}/dvc-sa-key.json"
           unset CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
           unset GOOGLE_GHA_CREDS_PATH
           echo "Running DVC pull..."
