@@ -1,4 +1,3 @@
----
 name: CI - IRIS Pipeline Test
 
 on:
@@ -49,7 +48,7 @@ jobs:
 
           echo "Testing access to bucket..."
           pip install google-cloud-storage
-          python - <<PY
+          python - <<'PY'
 import os, sys, subprocess
 bucket = os.getenv("BUCKET_NAME")
 print(f"Verifying access to: gs://{bucket}")
@@ -65,24 +64,4 @@ PY
       # 6️⃣ Pull data & model from DVC
       - name: Pull DVC data and model
         run: |
-          export GOOGLE_APPLICATION_CREDENTIALS="${PWD}/dvc-sa-key.json"
-          dvc pull --force
-          ls -R
-
-      # 7️⃣ Run tests with pytest
-      - name: Run pytest and generate markdown report
-        run: |
-          pytest --md report.md --disable-warnings -q
-          echo "✅ Pytest completed."
-
-      # 8️⃣ Install and use CML for PR comments
-      - name: Install CML
-        run: npm install -g @dvcorg/cml
-
-      - name: Post CML report to Pull Request
-        if: ${{ github.event_name == 'pull_request' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Posting test report comment..."
-          cml comment create report.md --token "$GITHUB_TOKEN"
+          export GOOGL
