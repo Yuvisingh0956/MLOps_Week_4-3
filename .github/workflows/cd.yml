@@ -61,12 +61,11 @@ jobs:
           pip install dvc-gs
 
       - name: DVC pull (get model)
+        env:
+          GCPKEY: ${{ secrets.GCP_SA_KEY }}
         run: |
-          echo "${{ secrets.GCP_SA_KEY }}" > "${{ runner.temp }}/dvc-sa-key.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="${{ runner.temp }}/dvc-sa-key.json"
-          unset CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
-          unset GOOGLE_GHA_CREDS_PATH
-          echo "Running DVC pull..."
+          echo "$GCPKEY" > /home/runner/work/_temp/dvc-sa-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS="/home/runner/work/_temp/dvc-sa-key.json"
           dvc pull --force
 
 
