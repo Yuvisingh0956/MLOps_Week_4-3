@@ -61,13 +61,14 @@ jobs:
           pip install dvc-gs
 
       - name: DVC pull (get model)
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
         run: |
-          # write key to a temp file for dvc
           echo "${{ secrets.GCP_SA_KEY }}" > "${{ runner.temp }}/gcp-key.json"
           export GOOGLE_APPLICATION_CREDENTIALS="${{ runner.temp }}/gcp-key.json"
+          unset CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
+          unset GOOGLE_GHA_CREDS_PATH
+          echo "Running DVC pull..."
           dvc pull --force
+
 
       - name: Build and push Docker image to Artifact Registry
         id: build_push
@@ -75,7 +76,7 @@ jobs:
           TAG: ${{ github.sha }}
           REGION: ${{ secrets.GCP_REGION }}
           REPO: ${{ secrets.ARTIFACT_REGISTRY_REPOSITORY }}
-          PROJECT: ${{ secrets.GCP_PROJECT }}
+          PROJECT: ${{ secrets.GCP_PROJECT_ID }}
         run: |
           IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/${IMAGE_NAME}:${TAG}"
           echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_OUTPUT
@@ -88,7 +89,7 @@ jobs:
         with:
           cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
           location: ${{ secrets.GKE_CLUSTER_ZONE }}
-          project_id: ${{ secrets.GCP_PROJECT }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Replace image placeholder in k8s manifest
         run: |
