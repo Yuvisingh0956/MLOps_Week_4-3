@@ -60,6 +60,11 @@ jobs:
           pip install dvc[gcs]
           pip install dvc-gs
 
+      - name: Show GCP credentials file
+        run: |
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
+          head -n 5 $GOOGLE_APPLICATION_CREDENTIALS
+
       - name: DVC pull (get model)
         run: |
           dvc pull --force
