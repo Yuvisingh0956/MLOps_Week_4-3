@@ -2,4 +2,3 @@
     remote = gcs-remote
 ['remote "gcs-remote"']
     url = gs://mlops-ga-4-3
-    credentialpath = ../dvc-sa-key.json
