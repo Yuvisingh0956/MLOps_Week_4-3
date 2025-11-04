@@ -29,7 +29,6 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y jq
-
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
@@ -39,7 +38,6 @@ jobs:
         run: |
           gcloud config set project $PROJECT_ID
           gcloud config set compute/region $IMAGE_REPO_REGION
-
       - name: Install gcloud components & kubectl
         run: |
           # install gcloud components for artifact registry & kubectl if not present
@@ -48,12 +46,10 @@ jobs:
           gcloud components install alpha --quiet || true
           gcloud components install beta --quiet || true
           kubectl version --client
-
       - name: Setup Docker auth to Artifact Registry
         run: |
           # Enable artifact registry docker auth
           gcloud auth configure-docker ${IMAGE_REPO_REGION}-docker.pkg.dev --quiet
-
       - name: Install DVC
         run: |
           python -m pip install --upgrade pip
@@ -82,7 +78,6 @@ jobs:
           echo "Building image ${IMAGE_URI}"
           docker build -t ${IMAGE_URI} .
           docker push ${IMAGE_URI}
-
       - name: Get GKE credentials
         uses: google-github-actions/get-gke-credentials@v1
         with:
@@ -98,14 +93,12 @@ jobs:
           sed "s|REPLACE_IMAGE_PLACEHOLDER|${IMAGE_URI}|g" k8s/deployment.yaml > k8s-deploy/deployment.yaml
           cp k8s/service.yaml k8s-deploy/service.yaml
           ls -R k8s-deploy
-
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f k8s-deploy/deployment.yaml
           kubectl apply -f k8s-deploy/service.yaml
           # wait for rollout
           kubectl rollout status deployment/iris-api --timeout=120s || kubectl rollout status deployment/iris-api
-
       - name: Get service external IP
         run: |
           echo "Waiting for LoadBalancer external IP (may take a while)..."
