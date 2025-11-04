@@ -61,11 +61,7 @@ jobs:
           pip install dvc-gs
 
       - name: DVC pull (get model)
-        env:
-          GCPKEY_B64: ${{ secrets.GCPKEY_BASE64_CD }}
         run: |
-          echo "$GCPKEY_B64" | base64 --decode > /home/runner/work/_temp/dvc-sa-key.json
-          export GOOGLE_APPLICATION_CREDENTIALS="/home/runner/work/_temp/dvc-sa-key.json"
           dvc pull --force
           
       - name: Build and push Docker image to Artifact Registry
