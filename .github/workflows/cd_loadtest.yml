@@ -37,10 +37,7 @@ jobs:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: DVC pull (get model)
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp-dvc.json
         run: |
-          echo "${{ secrets.GCP_SA_KEY }}" > gcp-dvc.json
           dvc pull --force
           ls -R
 
