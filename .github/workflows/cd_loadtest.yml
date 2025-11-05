@@ -1,0 +1,122 @@
+---
+name: CD + Load Test + Autoscale
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: "iris-api"
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: ${{ secrets.GCP_REGION }}
+  REPO: ${{ secrets.ARTIFACT_REGISTRY_REPOSITORY }}
+
+jobs:
+  deploy-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install DVC
+        run: |
+          python -m pip install --upgrade pip
+          pip install dvc[gcs]
+          pip install dvc-gs
+      # Run DVC pull BEFORE auth action to avoid gcloud ephemeral cred conflicts
+      - name: DVC pull (get model)
+        run: |
+          echo "${{ secrets.GCP_SA_KEY }}" > gcp-dvc.json
+          export GOOGLE_APPLICATION_CREDENTIALS="${PWD}/gcp-dvc.json"
+          dvc pull --force
+          ls -R
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure gcloud
+        run: |
+          gcloud config set project "${PROJECT_ID}"
+          gcloud config set compute/region "${REGION}"
+          gcloud --version
+
+      - name: Docker auth for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+
+      - name: Build & Push Image
+        id: buildpush
+        env:
+          TAG: ${{ github.sha }}
+        run: |
+          IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE_NAME}:${TAG}"
+          echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          docker build -t "${IMAGE_URI}" .
+          docker push "${IMAGE_URI}"
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+          location: ${{ secrets.GKE_CLUSTER_ZONE }}
+
+      - name: Deploy manifests (Deployment + Service)
+        run: |
+          IMAGE_URI=${{ steps.buildpush.outputs.IMAGE_URI }}
+          mkdir -p k8s-deploy
+          sed "s|REPLACE_IMAGE_PLACEHOLDER|${IMAGE_URI}|g" k8s/deployment.yaml > k8s-deploy/deployment.yaml
+          cp k8s/service.yaml k8s-deploy/service.yaml
+          kubectl apply -f k8s-deploy/deployment.yaml
+          kubectl apply -f k8s-deploy/service.yaml
+          kubectl rollout status deployment/iris-api --timeout=180s
+
+      - name: Apply HPA (max=3)
+        run: |
+          kubectl apply -f k8s/hpa-max3.yaml
+          kubectl get hpa
+
+      - name: Install wrk ConfigMap and Job (1000 concurrency)
+        run: |
+          kubectl apply -f k8s/wrk-configmap.yaml
+          kubectl delete job wrk-1000 --ignore-not-found
+          kubectl apply -f k8s/job-wrk-1000.yaml
+          kubectl wait --for=condition=complete job/wrk-1000 --timeout=600s || true
+          echo "---- wrk-1000 logs ----"
+          kubectl logs job/wrk-1000 || true
+          echo "---- HPA status ----"
+          kubectl get hpa
+          echo "---- Pods ----"
+          kubectl get pods -o wide
+
+      - name: Apply HPA (max=1)
+        run: |
+          kubectl apply -f k8s/hpa-max1.yaml
+          kubectl get hpa
+          # Give HPA a bit to settle and scale down if needed
+          sleep 30
+          kubectl get pods -o wide
+
+      - name: Run wrk 2000-concurrency job (bottleneck scenario)
+        run: |
+          kubectl delete job wrk-2000 --ignore-not-found
+          kubectl apply -f k8s/job-wrk-2000.yaml
+          kubectl wait --for=condition=complete job/wrk-2000 --timeout=600s || true
+          echo "---- wrk-2000 logs ----"
+          kubectl logs job/wrk-2000 || true
+          echo "---- Deployment & Pods ----"
+          kubectl describe deployment iris-api | sed -n '1,200p'
+          kubectl get pods -o wide
+          echo "---- Final HPA ----"
+          kubectl get hpa
