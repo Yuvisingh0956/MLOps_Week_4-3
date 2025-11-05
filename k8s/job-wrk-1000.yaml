@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wrk-1000
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: wrk
+          # If this image fails, replace with another wrk image available to you
+          image: skandyla/wrk
+          command: ["/bin/sh","-c"]
+          args:
+            - >
+              wrk -t12 -c1000 -d60s
+              -H "Content-Type: application/json"
+              -s /scripts/post.lua
+              http://iris-api-lb.default.svc.cluster.local/predict;
+          volumeMounts:
+            - name: wrk-scripts
+              mountPath: /scripts
+      volumes:
+        - name: wrk-scripts
+          configMap:
+            name: wrk-scripts
