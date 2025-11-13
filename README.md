@@ -1,5 +1,3 @@
-Here’s a properly formatted `README.md` for your assignment, using clear Markdown sections, tables, and command formatting to ensure excellent readability and reproducibility.
-
 ***
 
 # IRIS Dataset Data Poisoning Impact Analysis
